@@ -1,0 +1,33 @@
+{
+  "name": "voxelkloud-site",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Marketing site for voxelkloud, exported statically for GitHub Pages.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.9"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "preview": "npx --yes serve out -l 4321"
+  },
+  "dependencies": {
+    "@react-three/fiber": "^9.7.0",
+    "lucide-react": "^1.16.0",
+    "next": "16.3.0",
+    "react": "^19",
+    "react-dom": "^19",
+    "three": "^0.185.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^24",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/three": "^0.185.4",
+    "postcss": "^8.5",
+    "tailwindcss": "^4.3.3",
+    "typescript": "5.7.3"
+  }
+}
