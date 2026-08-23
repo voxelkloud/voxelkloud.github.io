@@ -23,14 +23,14 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://voxelkloud.github.i
 
 const title = 'voxelkloud — Point clouds without the black box'
 const description =
-  'A modern WebGPU point cloud viewer for Potree v2 data. React, Vue, or no framework.'
+  'An npm-installable WebGPU point cloud renderer for the web. React, Vue, or no framework. Reads the Potree v2 directory you already serve — no reconversion step. COPC and EPT drivers are written and awaiting release.'
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title,
   description,
   applicationName: 'voxelkloud',
-  keywords: ['point cloud', 'potree', 'webgpu', 'three.js', 'lidar', 'lod', 'typescript'],
+  keywords: ['point cloud', 'potree', 'copc', 'ept', 'webgpu', 'three.js', 'lidar', 'lod', 'typescript'],
   authors: [{ name: 'voxelkloud', url: 'https://github.com/voxelkloud' }],
   openGraph: {
     type: 'website',
