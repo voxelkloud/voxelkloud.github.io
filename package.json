@@ -10,7 +10,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "preview": "npx --yes serve out -l 4321"
+    "preview": "npx --yes serve out -l 4321",
+    "sync:wasm": "node scripts/sync-wasm.mjs",
+    "check:wasm": "node scripts/sync-wasm.mjs --check"
   },
   "dependencies": {
     "@react-three/fiber": "^9.7.0",

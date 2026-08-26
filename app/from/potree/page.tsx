@@ -16,15 +16,14 @@ const REACT = `import { PointCloudViewer } from '@voxelkloud/react'
   lod={{ pointBudget: 3_000_000 }}
 />`
 
-const VANILLA = `import { loadPointCloudSource, loadHierarchy } from '@voxelkloud/loader'
+const VANILLA = `import { loadPointCloud } from '@voxelkloud/loader'
 import { createPointCloudView } from '@voxelkloud/view'
 
-const source = await loadPointCloudSource('/pointclouds/my-cloud/')
-const hierarchy = await loadHierarchy(source)
+const { source, tree, openPoints } = await loadPointCloud('/pointclouds/my-cloud/')
 
 const view = createPointCloudView({ canvas })
 await view.init()
-view.addCloud(source, hierarchy)
+view.addCloud(source, tree, openPoints)
 view.frameCloud()
 
 // view.scene and view.camera are your three.js objects.
@@ -56,9 +55,9 @@ export default function FromPotree() {
         <h2>What you point it at</h2>
         <p className="lede">
           Either the directory or the <code>metadata.json</code> inside it. The loader identifies
-          the format from what it finds, which is why the same call is meant to keep working if you
-          later republish the cloud as COPC or EPT — those drivers are written and not yet
-          released.
+          the format from what it finds, which is why the same call keeps working if you later
+          republish the cloud as COPC or EPT — both drivers are on npm, and registering one is a
+          single call.
         </p>
         <pre className="code-block">
           <code>{REACT}</code>

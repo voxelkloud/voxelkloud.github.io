@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next'
+import { DOC_GUIDES } from '@/lib/docs'
 
 /**
  * A static export has no server to run a route handler on, so Next asks for
@@ -8,7 +9,7 @@ import type { MetadataRoute } from 'next'
 export const dynamic = 'force-static'
 
 /**
- * The three pages, for a crawler.
+ * The public pages, for a crawler.
  *
  * Not a formality. `/compare/potree/` and `/from/potree/` exist entirely for
  * search intent — somebody typing "potree alternative" or "potree react" is the
@@ -41,7 +42,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   return [
     { url: url('/'), lastModified, changeFrequency: 'weekly', priority: 1 },
+    { url: url('/docs/'), lastModified, changeFrequency: 'monthly', priority: 0.95 },
+    // The converter is a page people are sent a link to, so it is second only
+    // to the home page.
+    { url: url('/convert/'), lastModified, changeFrequency: 'monthly', priority: 0.9 },
     { url: url('/compare/potree/'), lastModified, changeFrequency: 'monthly', priority: 0.8 },
     { url: url('/from/potree/'), lastModified, changeFrequency: 'monthly', priority: 0.8 },
+    ...DOC_GUIDES.map((guide) => ({
+      url: url(`/docs/${guide.slug.join('/')}/`),
+      lastModified,
+      changeFrequency: 'monthly' as const,
+      priority: guide.slug.length === 1 ? 0.82 : 0.78,
+    })),
   ]
 }

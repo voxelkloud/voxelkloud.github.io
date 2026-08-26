@@ -73,7 +73,11 @@ The page claims only what the code can back:
 
 - Performance numbers come from the monorepo's `ROADMAP.md` and carry their
   caveats on screen.
-- The install commands are badged NOT PUBLISHED TO NPM YET until they are.
-- The "Run it" commands are the real ones from the monorepo README, badged
-  MONOREPO NOT PUBLIC YET until that repo exists. Drop the badge in
-  `app/page.tsx` when it does.
+- Code samples are written against what is ON NPM, not against the monorepo
+  working tree. A sample exists to be pasted, so it has to run against
+  `npm install` today.
+- The format table's `where` names the package you install for that row. A row
+  only claims a format when there is a driver, a published package, and tests
+  against a real file.
+- Test counts and versions are re-derived, not carried forward. `pnpm test` in
+  the monorepo and `npm view <pkg> version` are the sources.

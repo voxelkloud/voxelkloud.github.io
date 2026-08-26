@@ -21,7 +21,10 @@ const plexMono = IBM_Plex_Mono({
 // project URL, which is where this ships from.
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://voxelkloud.github.io/'
 
-const title = 'voxelkloud — Point clouds without the black box'
+// Plain on purpose. The title is what a search result shows and what a tab
+// says, and it earns nothing by being clever: it carries the terms someone
+// actually types, and the description below it does the arguing.
+const title = 'voxelkloud — WebGPU point cloud renderer for the web'
 const description =
   'An npm-installable WebGPU point cloud renderer for the web. React, Vue, or no framework. Reads the Potree v2 directory you already serve — no reconversion step. COPC and EPT drivers are written and awaiting release.'
 
@@ -38,7 +41,7 @@ export const metadata: Metadata = {
     url: siteUrl,
     title,
     description,
-    images: [{ url: 'og.png', width: 1200, height: 630, alt: 'voxelkloud — point clouds without the black box' }],
+    images: [{ url: 'og.png', width: 1200, height: 630, alt: 'voxelkloud — WebGPU point cloud renderer for the web' }],
   },
   twitter: {
     card: 'summary_large_image',

@@ -9,12 +9,15 @@ export const metadata: Metadata = {
 }
 
 /**
- * Architecture and integration. NOT speed.
+ * Architecture and integration, and — since 2026-08-25 — speed.
  *
  * Every row here is something a reader can verify by looking at either project.
- * There is no benchmark row, because no honest one exists: the two have not been
- * measured against each other on the same hardware with the same data, and a
- * table is the wrong place to put a number that has not been earned.
+ *
+ * The speed table below used to be absent on the grounds that no honest number
+ * existed. That is no longer true: `demo/bench-vitals/` drives all arms from one
+ * origin, on the same dataset, at the same camera, to the same on-screen point
+ * count, on a real GPU. The conditions ride along with the numbers on screen,
+ * because a benchmark number without its conditions is not a number.
  */
 const rows: readonly (readonly [string, string, string])[] = [
   ['Delivery', 'An app or bundle you copy into your page', 'npm packages, ESM, TypeScript, tree-shakeable'],
@@ -23,15 +26,52 @@ const rows: readonly (readonly [string, string, string])[] = [
   ['Frameworks', 'Hand-rolled integration', 'First-party React and Vue bindings'],
   ['Standalone loader', 'Coupled to the viewer', 'No three, no DOM: runs in Node and in a worker'],
   ['Potree v2', 'The origin of the format', 'Reads it as it is, DEFAULT and BROTLI'],
-  ['COPC', 'Reads it', 'Reads it in source, streamed by HTTP Range, no conversion — not released yet'],
-  ['EPT', 'Reads it', 'Reads it in source: binary, laszip, zstandard with a supplied decoder — not released yet'],
-  ['Single-file LAS/LAZ', 'Reads it', 'Not yet — the decoder is there, the client-side octree is not'],
-  ['E57', 'Reads it', 'Not yet'],
-  ['Conversion', 'PotreeConverter, a CLI', 'voxelkloud convert: a Rust library and a CLI, writing COPC, EPT or Potree v2 — in source, not released yet'],
+  ['COPC', 'Reads it', '@voxelkloud/format-copc: streamed by HTTP Range, no conversion step'],
+  ['EPT', 'Reads it', '@voxelkloud/format-ept: binary, laszip and zstandard node payloads'],
+  ['3D Tiles', '—', '@voxelkloud/format-3dtiles: external tilesets, implicit tiling, .pnts and glTF POINTS'],
+  ['Single-file LAS/LAZ', 'Reads it', "@voxelkloud/format-single: downloaded whole, the octree built in a worker by the converter's own partitioner in wasm"],
+  ['E57, PLY, PCD, XYZ', 'Reads E57', '@voxelkloud/format-single, in the page and in the CLI: scan poses applied, spherical records converted, no-returns dropped'],
+  ['Reprojection', '—', '@voxelkloud/wasm-proj: EPSG and proj4, so two clouds in different systems share one scene'],
+  ['Conversion', 'PotreeConverter, a CLI', 'voxelkloud convert: a Rust library and a CLI, writing COPC, EPT or Potree v2'],
   ['Deployment checks', '—', 'voxelkloud doctor grades a served cloud on ranges, CORS and encoding — including a Potree one'],
   ['Diagnostics', '—', 'stats.limitedBy: whether quality or the point budget stopped selection'],
   ['Types', 'JavaScript', 'TypeScript end to end'],
   ['License', 'BSD 2-Clause', 'MIT'],
+]
+
+/**
+ * Round B, 2026-08-25. Median of 4 cold runs. Raw JSON is versioned in the
+ * monorepo at `demo/bench-vitals/results-cable.json`.
+ *
+ * The `voxelkloud` column IS the compute rasteriser: `sinkMode` defaults to
+ * `"auto"`, which resolves to compute wherever WebGPU gives a device, and the
+ * benchmark page pins nothing. Shipped in 0.5.1.
+ *
+ * The fourth column is NOT a second rasteriser. It is `compute-raster.html`, a
+ * standalone harness that bypasses `createPointCloudView` and runs its own
+ * loader loop at 8 concurrent node fetches against the view's 1. Its
+ * convergence and heap come from that loop, not from how points are drawn —
+ * which is why it is labelled by what it is and excluded from every `win`.
+ *
+ * `win` indexes the columns — 0 voxelkloud, 2 Potree, 3 potree-core.
+ */
+const perf: readonly {
+  readonly metric: string
+  readonly vk: string
+  readonly spike: string
+  readonly potree: string
+  readonly core: string
+  readonly win?: number
+}[] = [
+  { metric: 'INP — orbit drag', vk: '56 ms', spike: '56 ms', potree: '104 ms', core: '224 ms', win: 0 },
+  { metric: 'Idle fps at 3M points', vk: '59.9', spike: '59.9', potree: '50.0', core: '25.0', win: 0 },
+  { metric: 'JS heap', vk: '67.3 MB', spike: '11.1 MB', potree: '253.6 MB', core: '213.1 MB', win: 0 },
+  { metric: 'First ink', vk: '743 ms', spike: '751 ms', potree: '1,379 ms', core: '726 ms' },
+  { metric: 'First contentful paint', vk: '554 ms', spike: '548 ms', potree: '800 ms', core: '430 ms', win: 3 },
+  { metric: 'First selection', vk: '501 ms', spike: '693 ms', potree: '929 ms', core: '423 ms', win: 3 },
+  { metric: 'Speed Index', vk: '1,926', spike: 'not measured', potree: '1,497', core: '8,440', win: 2 },
+  { metric: 'Visually complete', vk: '23.8 s', spike: '9.4 s', potree: '21.6 s', core: '25.5 s', win: 2 },
+  { metric: 'JS decoded', vk: '0.91 MB', spike: '0.94 MB', potree: '2.51 MB', core: '0.78 MB', win: 3 },
 ]
 
 export default function ComparePotree() {
@@ -47,9 +87,9 @@ export default function ComparePotree() {
         <p className="lede">
           Potree is the reason a point cloud can be looked at in a browser at all, and this project
           verifies its own Potree v2 driver against Potree&rsquo;s own implementation. What follows
-          is about architecture, API and integration. It is not about speed: the two have never been
-          measured against each other on the same hardware with the same data, so there is no such
-          row.
+          is about architecture, API and integration — and then about speed, measured on the same
+          hardware, the same data and the same camera, with the conditions written next to the
+          numbers.
         </p>
       </section>
 
@@ -71,6 +111,72 @@ export default function ComparePotree() {
           ))}
         </div>
 
+        <div className="perf">
+          <h2>Performance, measured</h2>
+          <p className="lede">
+            All four arms render the same cloud, from the same origin, at the same camera, to the
+            same on-screen point count — about 2,999,500 points and 105 MB transferred each. That
+            equalisation is what makes the rows below a comparison rather than four unrelated
+            numbers.
+          </p>
+          <p className="lede">
+            The <strong>voxelkloud</strong> column is what <code>npm install</code> gives you:{' '}
+            <code>sinkMode</code> defaults to <code>&quot;auto&quot;</code>, which is the compute
+            rasteriser wherever WebGPU provides a device. That default is itself a measurement —
+            the instanced path costs ~320 ms of INP at this budget where compute costs 56.
+          </p>
+
+          <div className="perf-table">
+            <div className="perf-head">
+              <span>METRIC</span>
+              <span>voxelkloud</span>
+              <span className="perf-spike-col">loader harness</span>
+              <span>Potree 1.8</span>
+              <span>potree-core</span>
+            </div>
+            {perf.map((row) => (
+              <div className="perf-row" key={row.metric}>
+                <span className="dim">{row.metric}</span>
+                <span className={row.win === 0 ? 'perf-win' : undefined}>{row.vk}</span>
+                <span className="perf-spike-col">{row.spike}</span>
+                <span className={row.win === 2 ? 'perf-win' : undefined}>{row.potree}</span>
+                <span className={row.win === 3 ? 'perf-win' : undefined}>{row.core}</span>
+              </div>
+            ))}
+          </div>
+
+          <p className="perf-note">
+            <strong>Conditions.</strong> Median of 4 cold runs, 25 August 2026. Chrome running
+            headed on a real GPU — headless has no WebGPU adapter and would score a software
+            rasteriser against WebGL. One origin serving every arm and the dataset, throttled to
+            20 Mbit with 40 ms RTT. Autzen, camera at 0.25 of the longest extent, 3M point budget.
+            The raw JSON for all 24 runs is versioned in the monorepo.
+          </p>
+          <p className="perf-note">
+            <strong>Why these deltas can be trusted.</strong> potree-core is unchanged code between
+            this round and the previous one, so it doubles as a control — it reproduced its own
+            first contentful paint, first ink and INP to within a few percent. The same control
+            also shows that <em>visually complete</em> and <em>Speed Index</em> shifted scale for
+            every arm between rounds, which is why neither is compared here against any earlier
+            number.
+          </p>
+          <p className="perf-note">
+            <strong>Speed Index measures each arm against its own final frame.</strong> A renderer
+            whose finished image is sharper has further to travel and scores worse for it, and
+            ours is sharper than Potree&rsquo;s — verified by screenshot. Some of that 1,926
+            against 1,497 is the metric, not latency. How much, nobody has isolated, so the row
+            stands as a loss.
+          </p>
+          <p className="perf-note">
+            <strong>The fourth column is a loader experiment, not a renderer.</strong> It is a
+            standalone harness that bypasses the view entirely and fetches 8 nodes at a time
+            against the shipped view&rsquo;s 1. Both it and the voxelkloud column draw through the
+            same compute rasteriser, so the 9.4 s convergence and the 11 MB heap belong to that
+            loading loop — not to how points reach the screen. It is here because the gap is worth
+            keeping visible, and it wins no row.
+          </p>
+        </div>
+
         <div className="honest">
           <h3>What Potree still does better</h3>
           <ul>
@@ -87,9 +193,9 @@ export default function ComparePotree() {
               a narrower set of machines.
             </li>
             <li>
-              What is on npm today is 0.1.0, and it reads Potree v2 only. The COPC and EPT drivers
-              exist in the source and have not been released, so a fair comparison of the two
-              installable things is narrower than the table above.
+              Potree is one artifact people have deployed for a decade. voxelkloud is fifteen
+              packages at 0.5.1 and a CLI at 0.5.2 — every row above is installable today, but
+              &ldquo;installable&rdquo; and &ldquo;battle-tested&rdquo; are not the same claim.
             </li>
             <li>
               PotreeConverter has converted a great deal of the world&rsquo;s LiDAR and is fast and

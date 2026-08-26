@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import dynamic from 'next/dynamic'
 import { ArrowUpRight, Check, ChevronRight, Copy, Menu, X } from 'lucide-react'
+import { BenchSlider } from '@/components/bench-slider'
 import { BrandMark } from '@/components/brand-mark'
 
 // three.js is ~600 KB and only ever paints the hero backdrop, so it stays out of
@@ -17,36 +18,48 @@ const PointCloudScene = dynamic(
 // a clone command.
 const ORG = 'https://github.com/voxelkloud'
 const REPOS: readonly (readonly [string, string])[] = [
-  ['core', 'Vocabulary: bounding boxes, attributes, transport, octree math'],
-  ['loader', 'Format identification and streaming over HTTP Range'],
-  ['view', 'The WebGPU renderer and the LOD scheduler'],
-  ['react', 'React bindings'],
-  ['vue', 'Vue 3 bindings'],
-  ['wasm-core', 'Rust LOD kernels, raw wasm'],
+  ['core', 'Shared types, bounding boxes, transport, and octree math'],
+  ['loader', 'Turns a URL into a source, tree, and reader factory'],
+  ['view', 'WebGPU renderer, selection loop, picking, and scene control'],
+  ['react', 'React wrapper over @voxelkloud/view'],
+  ['vue', 'Vue 3 wrapper over @voxelkloud/view'],
+  ['cli', 'inspect, doctor, serve, convert, optimize, snapshot'],
+  ['format-potree', 'Potree v2 driver — registered by default'],
+  ['format-copc', 'COPC driver — one LAS 1.4 file, streamed by Range'],
+  ['format-ept', 'Entwine Point Tile driver — plain static hosting'],
+  ['format-3dtiles', '3D Tiles driver — .pnts and glTF POINTS'],
+  ['format-single', 'LAS, LAZ, E57, PLY, PCD, XYZ with no index'],
+  ['wasm-core', 'Low-level culling and child-selection kernels'],
+  ['wasm-codecs', 'LAZ decoding, compiled from laz-rs'],
+  ['wasm-build', "The converter's own partitioner, in the page"],
+  ['wasm-proj', 'Reprojection from proj4rs, for two clouds in one scene'],
 ]
 
 // Written against what is ON NPM, not against the working tree. A landing page
-// sample exists to be pasted, and the source has moved ahead of 0.1.0 — the
-// format matrix below says by how much.
+// sample exists to be pasted, so it has to run against `npm install` today:
+// 0.5.1 for the scoped packages, 0.5.2 for the CLI.
 const installs = {
   React: `import { PointCloudViewer } from '@voxelkloud/react'\n\n<PointCloudViewer\n  url="/pointclouds/my-cloud/"\n  lod={{ pointBudget: 3_000_000 }}\n/>`,
   Vue: `import { PointCloudViewer } from '@voxelkloud/vue'\n\n<PointCloudViewer\n  url="/pointclouds/my-cloud/"\n  :lod="{ pointBudget: 3_000_000 }"\n/>`,
-  vanilla: `import { loadPointCloudSource, loadHierarchy } from '@voxelkloud/loader'\nimport { createPointCloudView } from '@voxelkloud/view'\n\nconst source = await loadPointCloudSource('/pointclouds/my-cloud/')\nconst hierarchy = await loadHierarchy(source)\n\nconst view = createPointCloudView({ canvas })\nawait view.init()\nview.addCloud(source, hierarchy)\nview.frameCloud()`,
+  vanilla: `import { loadPointCloud } from '@voxelkloud/loader'\nimport { createPointCloudView } from '@voxelkloud/view'\n\nconst { source, tree, openPoints } = await loadPointCloud('/pointclouds/my-cloud/')\n\nconst view = createPointCloudView({ canvas })\nawait view.init()\nview.addCloud(source, tree, openPoints)\nview.frameCloud()`,
 }
 
 const steps = [
-  ['01', 'npm install @voxelkloud/react three', 'Or @voxelkloud/vue, or @voxelkloud/view and @voxelkloud/loader with no framework. three is a peer dependency: the renderer builds on WebGPURenderer and TSL, and you keep the version you already have.'],
-  ['02', 'Point it at a cloud you already serve', 'A Potree v2 directory needs no reconversion — the same metadata.json, hierarchy.bin and octree.bin. The host has to answer 206 to a Range request, which is the same requirement Potree has.'],
-  ['03', 'Take the scene back', 'view.camera and view.scene are your three.js objects. OrbitControls and every other add-on attach the way they always do.'],
+  ['01', 'npm install @voxelkloud/react three', 'Or use @voxelkloud/vue, or `@voxelkloud/view` and `@voxelkloud/loader` directly. `three` stays a peer dependency because the renderer builds on `WebGPURenderer` and TSL.'],
+  ['02', 'Load a URL, not a format branch', 'The loader resolves the URL to the matching driver and returns `source`, `tree`, and `openPoints`. A Potree v2 directory, COPC file, EPT layout, 3D Tiles tileset, or a bare LAZ each lands in the same neutral contract.'],
+  ['03', 'Pass the objects into the view', 'The view owns the renderer, camera, and selection loop. `view.camera` and `view.scene` stay available for controls, picking, measurements, and anything else your app needs.'],
 ]
 
 const features = [
-  ['01', 'Formats, not a format', 'Three read today, each a driver behind one contract: COPC as one streamed file, EPT off static hosting, and Potree v2 as the directory you already serve. Adding the third touched neither the scheduler nor the renderer, which is the only evidence that the seam is real.'],
-  ['02', 'Your three.js scene', 'The renderer is WebGPU via three.js WebGPURenderer + TSL. view.camera and view.scene are yours — OrbitControls and other add-ons attach normally.'],
-  ['03', 'Loader without baggage', 'The loader has no three and no DOM in its module graph. Run inspection, conversion, or the LOD scheduler in a worker or in Node.'],
-  ['04', 'Know what quality costs', 'stats.limitedBy tells you whether the target screen error was met (error) or the point ceiling stopped selection (budget). No inert quality knob.'],
-  ['05', 'Precision, deliberately', 'Positions are float32 relative to the cloud origin. Use positionFormat: "int32" for exact values, with float64 camera-relative model-view on highPrecision renderers.'],
-  ['06', 'One frontier, few draws', 'The slab arena collapses a 1000-node frontier to <= 12 slabs. Memory is the deliberate tradeoff for fewer draw calls at low residency.'],
+  ['01', 'Neutral core', 'Bounding boxes, point-cloud contracts, transport, CRS declarations, and octree math live in `@voxelkloud/core`. Every other package reads those same types.'],
+  ['02', 'URL-driven loading', '`@voxelkloud/loader` identifies the format from the URL and returns the neutral source/tree pair. The app does not need a format switch to decide what it got.'],
+  ['03', 'Renderer stays separate', '`@voxelkloud/view` owns WebGPU, the camera, the scene, and the selection loop. It exposes `view.camera` and `view.scene` instead of hiding them.'],
+  ['04', 'Framework wrappers stay thin', '`@voxelkloud/react` and `@voxelkloud/vue` only manage lifecycle. They do not reimplement the renderer or the loader.'],
+  ['05', 'LOD is explicit', 'Target screen error, point budget, node cap, and the selection result are all exposed. You can see exactly what limited the frame.'],
+  ['06', 'Drivers are per format', 'COPC, EPT, Potree v2, 3D Tiles, and the single-file tier each ship as their own package. Install the ones you read; the renderer only ever sees the neutral tree and point reader.'],
+  ['07', 'Points stay addressable', '`pickPoint` resolves a screen position to a point, in absolute CRS coordinates and float64. `GroundIndex` answers `heightAt` synchronously off the resident cut, without allocating per query once warm.'],
+  ['08', 'Coordinates are not assumed', '`@voxelkloud/wasm-proj` reprojects between EPSG and proj4 systems, so two clouds captured in different ones land in the same scene. A measured affine placement, or an exact per-point path.'],
+  ['09', 'The command line is real', '`voxelkloud` inspects a cloud, doctors the host serving it, serves a directory with ranges and CORS, converts a file with no index, optimizes an encoding, and snapshots a PNG on the CPU.'],
 ]
 
 const knobs = [
@@ -55,7 +68,7 @@ const knobs = [
   ['material.colorMode', 'rgb', 'rgb / elevation / level / intensity / classification / flat'],
   ['edl', 'false', 'Potree’s exact 8-neighbour formulation'],
   ['decompress', '@voxelkloud/loader/brotli', 'Optional decoder for BROTLI clouds, never auto-imported'],
-  ['sinkMode', '"arena"', '"arena" or "per-node"'],
+  ['sinkMode', '"auto"', 'Compute rasteriser where WebGPU allows it; "compute", "arena", "per-node" pin one'],
   ['maxResidentBytes', '512 MiB', 'Least-recently-selected eviction'],
 ]
 
@@ -65,14 +78,14 @@ const knobs = [
 // `state` is one of 'reads' | 'next' | 'later', and nothing is listed as
 // shipping that does not have a driver and tests against a real file.
 //
-// `where` is the honest half. The drivers read these formats in the source and
-// only the Potree one is on npm today, so a row that said "Reads it" with
-// nothing else would send a reader to `npm install` for a viewer that cannot.
+// `where` is the honest half: the package you actually install to get that row.
+// Every driver is on npm as of 0.5.1, so `where` names it rather than saying
+// "source" — a reader who wants COPC should not have to guess which package.
 const formats = [
   {
     name: 'COPC',
     state: 'reads',
-    where: 'source',
+    where: '@voxelkloud/format-copc',
     what: 'One LAS 1.4 file with the octree inside it. Cloud Optimized Point Cloud.',
     convert: 'None',
     note: '364M points out of a 2 GB file, opened with three ranged reads totalling 0.79 MB.',
@@ -80,7 +93,7 @@ const formats = [
   {
     name: 'EPT',
     state: 'reads',
-    where: 'source',
+    where: '@voxelkloud/format-ept',
     what: 'Entwine Point Tile: a manifest, JSON hierarchy pages, one file per node.',
     convert: 'None',
     note: 'Static hosting, no Range support required — which is how the USGS 3DEP archive is published.',
@@ -88,39 +101,43 @@ const formats = [
   {
     name: 'Potree v2',
     state: 'reads',
-    where: 'npm',
+    where: '@voxelkloud/format-potree',
     what: 'The directory PotreeConverter writes: metadata.json, hierarchy.bin, octree.bin.',
     convert: 'Already done',
     note: 'DEFAULT and BROTLI. The deployment you already serve, read as it is.',
   },
   {
     name: 'LAS / LAZ',
-    state: 'next',
+    state: 'reads',
+    where: '@voxelkloud/format-single',
     what: 'A single file with no index. Drag it onto the page.',
-    convert: 'voxelkloud convert',
-    note: 'The command line gives one an index today. Reading it in the page, with no conversion step at all, is what is next.',
+    convert: 'In the browser',
+    note: 'The octree is built in a worker from the converter\'s own partitioner, compiled to wasm. 20M points is the ceiling; past that, convert it.',
   },
   {
     name: 'E57',
-    state: 'next',
-    what: 'The terrestrial-scanner interchange format.',
-    convert: 'In the browser',
-    note: 'XML section plus binary sections — closer to a driver of its own than to a parser.',
+    state: 'reads',
+    where: '@voxelkloud/format-single',
+    what: 'The terrestrial-scanner interchange format. FARO, Leica, Trimble.',
+    convert: 'In the browser, or voxelkloud convert',
+    note: 'Scan poses applied, spherical coordinates converted, and the no-returns dropped rather than piled at the origin — 215,329 of the 370,530 records in libE57\'s own pump scan.',
   },
   {
     name: '3D Tiles',
-    state: 'later',
+    state: 'reads',
+    where: '@voxelkloud/format-3dtiles',
     what: 'OGC tileset, glTF payloads, geometric error rather than point spacing.',
     convert: 'None',
-    note: 'The scheduler was generalised for it and holds a tile error the same way it holds a point pitch. Waiting on demand, not on work.',
+    note: 'tileset.json, external tilesets, implicit tiling, and content as .pnts or glTF POINTS. The scheduler holds a tile error the same way it holds a point pitch.',
   },
 ]
 
 const navLinks = [
-  ['#run', 'Install'],
-  ['#features', 'Features'],
-  ['#formats', 'Formats'],
-  ['#measurements', 'Measured'],
+  ['./docs/', 'Docs'],
+  ['#run', 'Packages'],
+  ['#features', 'Why it is split'],
+  ['#formats', 'Inputs'],
+  ['#measurements', 'Tests'],
 ]
 
 export default function Page() {
@@ -174,20 +191,20 @@ export default function Page() {
           <span className="pulse" aria-hidden="true" /> POINT CLOUDS / WEBGPU / TYPESCRIPT
         </p>
         <h1>
-          Point clouds,
+          Point cloud rendering,
           <br />
-          <em>without the black box.</em>
+          <em>with the pieces exposed.</em>
         </h1>
         <p className="hero-copy">
-          An npm-installable point cloud renderer for the web. One renderer, three ways in: React,
-          Vue, or no framework.
+          A WebGPU point-cloud stack split into a neutral core, a loader, a renderer, and thin
+          bindings. Install the pieces you need and keep the rest out of your bundle.
         </p>
         <div className="hero-actions">
           <a className="button button-primary" href={ORG} rel="noreferrer" target="_blank">
             View on GitHub <ArrowUpRight aria-hidden="true" size={16} />
           </a>
           <a className="button button-quiet" href="#install">
-            Get started <ChevronRight aria-hidden="true" size={16} />
+            Read docs <ChevronRight aria-hidden="true" size={16} />
           </a>
         </div>
         <div className="hero-point-cloud" aria-hidden="true">
@@ -199,11 +216,11 @@ export default function Page() {
         <p className="section-kicker">01 / START HERE</p>
         <div className="install-heading">
           <h2>
-            Three entry points.
+            Install the pieces you need.
             <br />
-            The same view.
+            One package per job.
           </h2>
-          <span className="status-note">ON NPM · 0.1.0</span>
+          <span className="status-note">PUBLIC PACKAGES</span>
         </div>
         <div className="install-card">
           <div className="install-tabs" role="tablist">
@@ -244,22 +261,31 @@ export default function Page() {
             <code>{installs[tab]}</code>
           </pre>
         </div>
+        <div className="install-meta">
+          <p>
+            Need the technical reference? The docs page covers the loader contract, LOD
+            selection, culling, and the public package entry points.
+          </p>
+          <a className="button button-quiet" href="./docs/">
+            Open docs <ChevronRight aria-hidden="true" size={16} />
+          </a>
+        </div>
       </section>
 
       <section className="run shell" id="run">
-        <p className="section-kicker">02 / INSTALL IT</p>
+        <p className="section-kicker">02 / PACKAGE BOUNDARIES</p>
         <div className="two-col-heading">
           <h2>
-            No app to adopt.
+            What each package owns.
             <br />
-            <em>Packages to install.</em>
+            <em>Nothing more.</em>
           </h2>
           <div>
             <p>
-              Three steps from npm to a cloud on screen, into a page you already have. There is no
-              bundle to copy and no viewer to configure around.
+              The split is the point: `core` owns the shared types and math, `loader` resolves a URL
+              to a source and tree, `view` renders, and React or Vue only handles lifecycle.
             </p>
-            <span className="status-note">DRIVERS AWAITING RELEASE</span>
+            <span className="status-note">LOADER / VIEW / BINDINGS</span>
           </div>
         </div>
         <div className="run-grid">
@@ -273,7 +299,7 @@ export default function Page() {
             ))}
           </ol>
           <aside className="run-aside">
-            <h3>What it asks of you</h3>
+            <h3>What you need</h3>
             <ul>
               <li>three.js as a peer dependency, and a bundler that speaks ESM.</li>
               <li>
@@ -282,7 +308,7 @@ export default function Page() {
               </li>
               <li>A host that honours HTTP Range. Without it nothing streams, here or anywhere.</li>
             </ul>
-            <h3 className="repos-heading">Source</h3>
+            <h3 className="repos-heading">Public packages</h3>
             <ul className="repos">
               {REPOS.map(([name, what]) => (
                 <li key={name}>
@@ -298,11 +324,11 @@ export default function Page() {
       </section>
 
       <section className="features shell" id="features">
-        <p className="section-kicker">03 / THE SHAPE OF IT</p>
+        <p className="section-kicker">03 / WHY IT IS SPLIT</p>
         <h2>
-          Built around the
+          Responsibilities stay
           <br />
-          <em>actual problem.</em>
+          <em>separate on purpose.</em>
         </h2>
         <div className="feature-grid">
           {features.map(([num, title, body]) => (
@@ -316,10 +342,10 @@ export default function Page() {
       </section>
 
       <section className="knobs shell" id="knobs">
-        <p className="section-kicker">04 / CONTROL SURFACE</p>
+        <p className="section-kicker">04 / CONFIGURATION</p>
         <div className="two-col-heading">
           <h2>
-            <em>Real render control.</em>
+            <em>Runtime knobs.</em>
           </h2>
           <p>Every setting maps to a real decision in the selection, memory, or shading pipeline.</p>
         </div>
@@ -335,23 +361,22 @@ export default function Page() {
       </section>
 
       <section className="formats shell" id="formats">
-        <p className="section-kicker">05 / FORMATS</p>
+        <p className="section-kicker">05 / SUPPORTED INPUTS</p>
         <h2>
-          Point clouds are published in
+          Each input has its own
           <br />
-          <em>more than one format.</em>
+          <em>driver and entry point.</em>
         </h2>
         <p className="lede">
-          Each one is a driver behind a single contract, so the scheduler and the renderer never
-          learn which is which. Three read today. The rows below say which, and what each still
-          costs you.
+          Use the driver that matches the data you already have. The rows below show what each
+          format expects and the package or command that opens it.
         </p>
         <div className="format-table">
           <div className="format-head">
             <span>FORMAT</span>
             <span>WHAT IT IS</span>
-            <span>CONVERSION</span>
-            <span>STATUS</span>
+            <span>ENTRY</span>
+            <span>AVAILABILITY</span>
           </div>
           {formats.map((row) => (
             <div className="format-row" key={row.name}>
@@ -363,73 +388,80 @@ export default function Page() {
               <span className="dim">{row.convert}</span>
               <span className="format-status">
                 <span className={`badge badge-${row.state}`}>
-                  {row.state === 'reads' ? 'Reads it' : row.state === 'next' ? 'Next' : 'On demand'}
+                  {row.state === 'reads' ? 'Public' : row.state === 'next' ? 'Working' : 'Planned'}
                 </span>
                 {row.where !== undefined && (
-                  <em className="format-where">
-                    {row.where === 'npm' ? 'on npm' : 'in source'}
-                  </em>
+                  <em className="format-where">{row.where}</em>
                 )}
               </span>
             </div>
           ))}
         </div>
         <p className="format-footnote">
-          <strong>In source, not yet on npm.</strong> The 0.1.0 packages on npm read Potree v2 and
-          nothing else — the COPC and EPT drivers are written, tested against real files, and
-          waiting on a release. Until then <code>npm install</code> gets you the Potree stack.
+          <strong>Release status.</strong> Every driver above is on npm at 0.5.1, and the CLI at
+          0.5.2. <code>@voxelkloud/loader</code> registers the Potree v2 driver for you; the
+          others install alongside it and register themselves, so a bundle only carries the
+          readers it actually uses.
         </p>
         <p className="format-footnote">
-          <strong>A file with no index has to become one.</strong>{' '}
-          <code>voxelkloud convert</code> does that — LAS, LAZ or COPC in; COPC, EPT or Potree v2
-          out, and several inputs merged into one cloud. <code>voxelkloud doctor</code> is the other
-          half: it grades a deployment you already have, whichever tool built it, on the things
-          every format here depends on — byte ranges, CORS, and whether something is compressing a
-          payload that is already compressed. Both are in source with the drivers; neither is on
-          npm yet.
+          <strong>There is a command line too.</strong> <code>voxelkloud convert</code> turns
+          LAS, LAZ, E57 or COPC into an indexed cloud. <code>voxelkloud doctor</code> grades byte
+          ranges, CORS, encoding and MIME on a deployment you already have.{' '}
+          <code>voxelkloud optimize</code> re-encodes a cloud for delivery without rebuilding its
+          tree, and <code>voxelkloud snapshot</code> renders a PNG thumbnail on the CPU with no
+          browser involved. <code>npm install -g voxelkloud</code>.
         </p>
         <p className="format-footnote">
-          Coming from Potree? <a href="./compare/potree/">How the two compare</a> and{' '}
-          <a href="./from/potree/">what switching involves</a> — including what Potree still does
-          better.
+          <strong>Have a file with no index?</strong>{' '}
+          <a href="./convert/">Convert it in your browser</a> — drop a{' '}
+          <code>.laz</code> in and get a <code>.copc.laz</code> back, with nothing uploaded. The
+          same partitioner the command line runs, compiled to wasm.
+        </p>
+        <p className="format-footnote">
+          Migrating from Potree?{' '}
+          <a href="./compare/potree/">Read the migration notes</a> and{' '}
+          <a href="./from/potree/">the switch checklist</a>.
         </p>
       </section>
 
       <section className="measurements shell" id="measurements">
-        <p className="section-kicker">06 / MEASURED, NOT PROMISED</p>
+        <p className="section-kicker">06 / TEST DATA</p>
         <h2>
-          Numbers with
+          What was measured
           <br />
-          <em>the caveats attached.</em>
+          <em>and under which conditions.</em>
         </h2>
-        <div className="measure-grid">
-          <div className="measure-card">
-            <strong>
-              0.9—2.8 <small>ms</small>
-            </strong>
-            <span>CPU cost per frame · 1.10M to 4.57M selected points</span>
+        <BenchSlider />
+
+        <div className="head2head">
+          <div className="head2head-copy">
+            <h3>Against Potree, on the same cloud</h3>
+            <p>
+              Same origin, same camera, same 3M points on screen, median of 4 cold runs. Three
+              rows go to voxelkloud:
+            </p>
           </div>
-          <div className="measure-card">
-            <strong>
-              59.6 <small>Hz</small>
-            </strong>
-            <span>Served at every stop · vsync-locked on a real GPU</span>
+          <div className="head2head-stats">
+            <div>
+              <strong>56 ms</strong>
+              <span>INP · Potree 104, potree-core 224</span>
+            </div>
+            <div>
+              <strong>59.9 fps</strong>
+              <span>idle at 3M · Potree 50.0, potree-core 25.0</span>
+            </div>
+            <div>
+              <strong>67 MB</strong>
+              <span>JS heap · Potree 254, potree-core 213</span>
+            </div>
           </div>
-          <div className="measure-card">
-            <strong>
-              0.1—0.5 <small>ms</small>
-            </strong>
-            <span>LOD selection at shipped defaults</span>
-          </div>
-          <div className="measure-card">
-            <strong>112 / 199 / 273</strong>
-            <span>Manifest / hierarchy / point data tests</span>
-          </div>
+          <p className="head2head-loss">
+            Two go the other way: <strong>first contentful paint</strong> (554 ms against
+            potree-core’s 430) and <strong>Speed Index</strong> (1,926 against Potree’s 1,497).{' '}
+            <a href="./compare/potree/">The full table, the conditions, and why the Speed Index
+            row is partly an artefact of the metric</a>.
+          </p>
         </div>
-        <p className="caveat">
-          Measured on autzen with WebGPU backend, 20M budget, 120 frames. The GPU’s own headroom is{' '}
-          <strong>not measured</strong>, and never will be through a present-locked timer.
-        </p>
       </section>
 
       <footer className="footer shell">
