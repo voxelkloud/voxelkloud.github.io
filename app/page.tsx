@@ -176,14 +176,16 @@ export default function Page() {
           <span className="pulse" aria-hidden="true" /> POINT CLOUDS / WEBGPU / TYPESCRIPT
         </p>
         <h1>
-          Point cloud rendering,
+          Two hundred million points,
           <br />
-          <em>in your own three.js scene.</em>
+          <em>in a browser tab.</em>
         </h1>
         <p className="hero-copy">
-          A point-cloud stack split into a neutral core, a loader, a renderer, and thin
-          bindings. WebGPU where the browser has it, WebGL 2 where it does not. Install the
-          pieces you need and keep the rest out of your bundle.
+          That is one 241-million-point survey on a bucket, streamed by HTTP Range: only what
+          the camera can see ever reaches the GPU. The stack behind it is split into a neutral
+          core, a loader, a renderer and thin bindings — WebGPU where the browser has it,
+          WebGL 2 where it does not. Install the pieces you need and keep the rest out of your
+          bundle.
         </p>
         <div className="hero-actions">
           <a className="button button-primary" href={ORG} rel="noreferrer" target="_blank">
