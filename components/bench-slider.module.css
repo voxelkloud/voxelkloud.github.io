@@ -1,0 +1,84 @@
+/* Scoped rather than global, and deliberately: the page's own stylesheet is
+   carrying uncommitted work, and a widget has no business editing it. The
+   design tokens are global, so this still inherits the page's palette and
+   typography exactly. */
+
+.root { margin-top: 40px; }
+
+.conditions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 22px;
+  margin: 0 0 18px;
+  padding: 0;
+  list-style: none;
+  font: 12px var(--font-mono);
+  color: var(--muted);
+}
+.conditions b { color: var(--foreground); font-weight: 400; }
+
+.scrub {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas: "label now" "range range";
+  align-items: baseline;
+  gap: 12px 16px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  padding: 18px 20px 20px;
+}
+.scrubLabel {
+  grid-area: label;
+  font: 11px var(--font-mono);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.now {
+  grid-area: now;
+  justify-self: end;
+  font: 20px var(--font-mono);
+  letter-spacing: -.03em;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.scrub input[type="range"] { grid-area: range; width: 100%; accent-color: var(--accent); height: 22px; }
+
+/* The RAIL scrolls, never the page: four panels below ~840 px would otherwise
+   push the whole document sideways. */
+.rail { overflow-x: auto; margin-top: 1px; }
+.grid { display: grid; gap: 1px; background: var(--border); border: 1px solid var(--border); min-width: 840px; }
+
+.panel { margin: 0; background: var(--panel); display: flex; flex-direction: column; }
+.panel figcaption { display: flex; align-items: center; gap: 8px; padding: 12px 14px 10px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.name { font: 13px var(--font-mono); color: var(--foreground); }
+.engine { margin-left: auto; font: 11px var(--font-mono); color: var(--muted); }
+.ours .name { color: var(--accent); }
+
+.shot { display: block; width: 100%; aspect-ratio: 3 / 2; object-fit: cover; background: #000; border-block: 1px solid var(--border); }
+/* A stop with no recorded frame is not an empty picture, and must not read as
+   one: the Potree arm has nothing before 1571 ms. */
+.empty {
+  display: grid;
+  place-items: center;
+  font: 11px var(--font-mono);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: repeating-linear-gradient(45deg, #0d120f 0 7px, #101512 7px 14px);
+}
+.readout {
+  display: flex;
+  gap: 16px;
+  padding: 10px 14px;
+  font: 12px var(--font-mono);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.chart { display: block; width: 100%; height: 210px; margin-top: 22px; }
+.legend { margin-top: 10px; color: var(--muted); font-size: 13px; line-height: 1.6; max-width: 62ch; }
+.legend em { color: var(--foreground); font-style: normal; }
+
+@media (max-width: 760px) { .chart { height: 170px; } }
