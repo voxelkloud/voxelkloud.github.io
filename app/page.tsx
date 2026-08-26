@@ -17,23 +17,8 @@ const PointCloudScene = dynamic(
 // that points at the others. There is nothing to clone, so nothing here offers
 // a clone command.
 const ORG = 'https://github.com/voxelkloud'
-const REPOS: readonly (readonly [string, string])[] = [
-  ['core', 'Shared types, bounding boxes, transport, and octree math'],
-  ['loader', 'Turns a URL into a source, tree, and reader factory'],
-  ['view', 'WebGPU renderer, selection loop, picking, and scene control'],
-  ['react', 'React wrapper over @voxelkloud/view'],
-  ['vue', 'Vue 3 wrapper over @voxelkloud/view'],
-  ['cli', 'inspect, doctor, serve, convert, optimize, snapshot'],
-  ['format-potree', 'Potree v2 driver — registered by default'],
-  ['format-copc', 'COPC driver — one LAS 1.4 file, streamed by Range'],
-  ['format-ept', 'Entwine Point Tile driver — plain static hosting'],
-  ['format-3dtiles', '3D Tiles driver — .pnts and glTF POINTS'],
-  ['format-single', 'LAS, LAZ, E57, PLY, PCD, XYZ with no index'],
-  ['wasm-core', 'Low-level culling and child-selection kernels'],
-  ['wasm-codecs', 'LAZ decoding, compiled from laz-rs'],
-  ['wasm-build', "The converter's own partitioner, in the page"],
-  ['wasm-proj', 'Reprojection from proj4rs, for two clouds in one scene'],
-]
+/** Only the count is shown; the list itself lives on GitHub and on npm. */
+const REPO_COUNT = 15
 
 // Written against what is ON NPM, not against the working tree. A landing page
 // sample exists to be pasted, so it has to run against `npm install` today:
@@ -51,15 +36,15 @@ const steps = [
 ]
 
 const features = [
-  ['01', 'Neutral core', 'Bounding boxes, point-cloud contracts, transport, CRS declarations, and octree math live in `@voxelkloud/core`. Every other package reads those same types.'],
-  ['02', 'URL-driven loading', '`@voxelkloud/loader` identifies the format from the URL and returns the neutral source/tree pair. The app does not need a format switch to decide what it got.'],
-  ['03', 'Renderer stays separate', '`@voxelkloud/view` owns WebGPU, the camera, the scene, and the selection loop. It exposes `view.camera` and `view.scene` instead of hiding them.'],
-  ['04', 'Framework wrappers stay thin', '`@voxelkloud/react` and `@voxelkloud/vue` only manage lifecycle. They do not reimplement the renderer or the loader.'],
-  ['05', 'LOD is explicit', 'Target screen error, point budget, node cap, and the selection result are all exposed. You can see exactly what limited the frame.'],
-  ['06', 'Drivers are per format', 'COPC, EPT, Potree v2, 3D Tiles, and the single-file tier each ship as their own package. Install the ones you read; the renderer only ever sees the neutral tree and point reader.'],
-  ['07', 'Points stay addressable', '`pickPoint` resolves a screen position to a point, in absolute CRS coordinates and float64. `GroundIndex` answers `heightAt` synchronously off the resident cut, without allocating per query once warm.'],
-  ['08', 'Coordinates are not assumed', '`@voxelkloud/wasm-proj` reprojects between EPSG and proj4 systems, so two clouds captured in different ones land in the same scene. A measured affine placement, or an exact per-point path.'],
-  ['09', 'The command line is real', '`voxelkloud` inspects a cloud, doctors the host serving it, serves a directory with ranges and CORS, converts a file with no index, optimizes an encoding, and snapshots a PNG on the CPU.'],
+  ['01', 'One vocabulary, not six', 'Bounding boxes, coordinates, transport and octree maths are defined once, in `@voxelkloud/core`, and every other package reads those same definitions. Nothing has to translate between packages, so nothing gets lost translating.'],
+  ['02', 'Point at a URL', '`@voxelkloud/loader` works out the format from the address and hands back the same shape whatever it found. Your code has no branch in it for COPC versus EPT versus Potree.'],
+  ['03', 'The scene stays yours', '`@voxelkloud/view` drives the GPU, but `view.camera` and `view.scene` are ordinary three.js objects. Add a mesh, move the camera, run your own frame loop — the renderer is a participant in your scene, not the owner of it.'],
+  ['04', 'React and Vue are wrappers, not forks', 'They handle mounting and unmounting, and nothing else. A feature reaches them the day it lands in the renderer, because there is no second copy of it to update.'],
+  ['05', 'You can see why a frame looks the way it does', 'Set a target error and a point budget, then read back what actually bound. `stats.limitedBy` says whether it was quality or the budget — so tuning is reading a number, not guessing.'],
+  ['06', 'You ship the formats you read', 'COPC, EPT, Potree v2, 3D Tiles and the no-index tier are separate installs. Read one format and your bundle carries one reader.'],
+  ['07', 'Click a point, get the point', '`pickPoint` turns a screen position into real survey coordinates at full precision, not a rounded guess. `heightAt` answers ground height straight away, with no round trip to a server.'],
+  ['08', 'Two surveys, one scene', 'Clouds captured in different coordinate systems line up, because `@voxelkloud/wasm-proj` converts between them. Place a whole cloud at once, or convert every point.'],
+  ['09', 'There is a command line too', '`voxelkloud` inspects a cloud, tells you whether your server is delivering it properly, converts a file that arrived with no index, and renders a thumbnail without opening a browser.'],
 ]
 
 const knobs = [
@@ -68,7 +53,7 @@ const knobs = [
   ['material.colorMode', 'rgb', 'rgb / elevation / level / intensity / classification / flat'],
   ['edl', 'false', 'Potree’s exact 8-neighbour formulation'],
   ['decompress', '@voxelkloud/loader/brotli', 'Optional decoder for BROTLI clouds, never auto-imported'],
-  ['sinkMode', '"auto"', 'Compute rasteriser where WebGPU allows it; "compute", "arena", "per-node" pin one'],
+  ['sinkMode', '"auto"', 'Compute on WebGPU, else points on WebGL 2; "compute", "points", "arena", "per-node" pin one'],
   ['maxResidentBytes', '512 MiB', 'Least-recently-selected eviction'],
 ]
 
@@ -196,8 +181,9 @@ export default function Page() {
           <em>with the pieces exposed.</em>
         </h1>
         <p className="hero-copy">
-          A WebGPU point-cloud stack split into a neutral core, a loader, a renderer, and thin
-          bindings. Install the pieces you need and keep the rest out of your bundle.
+          A point-cloud stack split into a neutral core, a loader, a renderer, and thin
+          bindings. WebGPU where the browser has it, WebGL 2 where it does not. Install the
+          pieces you need and keep the rest out of your bundle.
         </p>
         <div className="hero-actions">
           <a className="button button-primary" href={ORG} rel="noreferrer" target="_blank">
@@ -303,22 +289,22 @@ export default function Page() {
             <ul>
               <li>three.js as a peer dependency, and a bundler that speaks ESM.</li>
               <li>
-                A browser with WebGPU. Headless has no adapter, and the WebGL2 fallback on
-                SwiftShader is not a demo — it is a slideshow.
+                WebGPU where the browser has it, WebGL 2 everywhere else — the fallback is a
+                second full rasteriser, not a degraded mode, and it holds the same frame rate.
+                What is genuinely a slideshow is SwiftShader: headless has no GPU adapter at
+                all, so measure in a real browser.
               </li>
               <li>A host that honours HTTP Range. Without it nothing streams, here or anywhere.</li>
             </ul>
             <h3 className="repos-heading">Public packages</h3>
-            <ul className="repos">
-              {REPOS.map(([name, what]) => (
-                <li key={name}>
-                  <a href={`${ORG}/${name}`} rel="noreferrer" target="_blank">
-                    voxelkloud/{name}
-                  </a>
-                  <span>{what}</span>
-                </li>
-              ))}
-            </ul>
+            <p className="repos-summary">
+              <strong>{REPO_COUNT} packages</strong>, each in its own repository and each on npm:
+              the core, the loader, the renderer, the framework bindings, six format drivers, the
+              wasm kernels, and the CLI.{' '}
+              <a href={ORG} rel="noreferrer" target="_blank">
+                See them all on GitHub <ArrowUpRight aria-hidden="true" size={13} />
+              </a>
+            </p>
           </aside>
         </div>
       </section>
@@ -437,27 +423,28 @@ export default function Page() {
           <div className="head2head-copy">
             <h3>Against Potree, on the same cloud</h3>
             <p>
-              Same origin, same camera, same 3M points on screen, median of 4 cold runs. Three
-              rows go to voxelkloud:
+              Same origin, same camera, same 3M points on screen, median of 2 cold runs. Seven
+              of nine rows go to voxelkloud:
             </p>
           </div>
           <div className="head2head-stats">
             <div>
               <strong>56 ms</strong>
-              <span>INP · Potree 104, potree-core 224</span>
+              <span>INP · Potree 104, potree-core 200</span>
             </div>
             <div>
-              <strong>59.9 fps</strong>
-              <span>idle at 3M · Potree 50.0, potree-core 25.0</span>
+              <strong>522 ms</strong>
+              <span>first ink · Potree 1,233, potree-core 622</span>
             </div>
             <div>
-              <strong>67 MB</strong>
-              <span>JS heap · Potree 254, potree-core 213</span>
+              <strong>66.6 MB</strong>
+              <span>JS heap · Potree 254, potree-core 212</span>
             </div>
           </div>
           <p className="head2head-loss">
-            Two go the other way: <strong>first contentful paint</strong> (554 ms against
-            potree-core’s 430) and <strong>Speed Index</strong> (1,926 against Potree’s 1,497).{' '}
+            Two go the other way, both in the tail rather than the start:{' '}
+            <strong>Speed Index</strong> (1,918 against Potree’s 1,493) and{' '}
+            <strong>visually complete</strong> (23.5 s against 21.4 s).{' '}
             <a href="./compare/potree/">The full table, the conditions, and why the Speed Index
             row is partly an artefact of the metric</a>.
           </p>

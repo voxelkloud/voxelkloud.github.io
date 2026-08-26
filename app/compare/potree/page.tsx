@@ -40,38 +40,46 @@ const rows: readonly (readonly [string, string, string])[] = [
 ]
 
 /**
- * Round B, 2026-08-25. Median of 4 cold runs. Raw JSON is versioned in the
- * monorepo at `demo/bench-vitals/results-cable.json`.
+ * Round C, 2026-08-26. Median of 2 cold runs each, all from one sitting on a
+ * quiet host. Raw JSON is versioned in the monorepo at
+ * `demo/bench-vitals/results-cable.json`, and the Speed Index row at
+ * `visual-cable.json` — a separate instrument, because run.mjs compares frames
+ * by encoded size and that is near-blind to holes filling in.
+ *
+ * The first sitting was thrown away. Idle fps came back as exactly 50.0 for two
+ * different engines and exactly 25.0 for the third, and numbers that round are
+ * missed vsync rather than a result — a background updater was taking 27% of a
+ * core. With it closed the same arms read 60.2, 59.5 and 29.9.
  *
  * The `voxelkloud` column IS the compute rasteriser: `sinkMode` defaults to
  * `"auto"`, which resolves to compute wherever WebGPU gives a device, and the
  * benchmark page pins nothing. Shipped in 0.5.1.
  *
- * The fourth column is NOT a second rasteriser. It is `compute-raster.html`, a
- * standalone harness that bypasses `createPointCloudView` and runs its own
- * loader loop at 8 concurrent node fetches against the view's 1. Its
- * convergence and heap come from that loop, not from how points are drawn —
- * which is why it is labelled by what it is and excluded from every `win`.
+ * There used to be a fourth column here, `compute-raster.html` — a standalone
+ * harness that bypasses `createPointCloudView` and runs its own loader loop at
+ * 8 concurrent node fetches against the view's 1. It measured that loop rather
+ * than how points are drawn, it was excluded from every `win`, and nothing in
+ * the header told a reader either of those things. A column nobody can win and
+ * nobody can install is a column that only ever confused.
  *
  * `win` indexes the columns — 0 voxelkloud, 2 Potree, 3 potree-core.
  */
 const perf: readonly {
   readonly metric: string
   readonly vk: string
-  readonly spike: string
   readonly potree: string
   readonly core: string
   readonly win?: number
 }[] = [
-  { metric: 'INP — orbit drag', vk: '56 ms', spike: '56 ms', potree: '104 ms', core: '224 ms', win: 0 },
-  { metric: 'Idle fps at 3M points', vk: '59.9', spike: '59.9', potree: '50.0', core: '25.0', win: 0 },
-  { metric: 'JS heap', vk: '67.3 MB', spike: '11.1 MB', potree: '253.6 MB', core: '213.1 MB', win: 0 },
-  { metric: 'First ink', vk: '743 ms', spike: '751 ms', potree: '1,379 ms', core: '726 ms' },
-  { metric: 'First contentful paint', vk: '554 ms', spike: '548 ms', potree: '800 ms', core: '430 ms', win: 3 },
-  { metric: 'First selection', vk: '501 ms', spike: '693 ms', potree: '929 ms', core: '423 ms', win: 3 },
-  { metric: 'Speed Index', vk: '1,926', spike: 'not measured', potree: '1,497', core: '8,440', win: 2 },
-  { metric: 'Visually complete', vk: '23.8 s', spike: '9.4 s', potree: '21.6 s', core: '25.5 s', win: 2 },
-  { metric: 'JS decoded', vk: '0.91 MB', spike: '0.94 MB', potree: '2.51 MB', core: '0.78 MB', win: 3 },
+  { metric: 'INP — orbit drag', vk: '56 ms', potree: '104 ms', core: '200 ms', win: 0 },
+  { metric: 'Idle fps at 3M points', vk: '60.2', potree: '59.5', core: '29.9', win: 0 },
+  { metric: 'JS heap', vk: '66.6 MB', potree: '254.1 MB', core: '211.8 MB', win: 0 },
+  { metric: 'First ink', vk: '522 ms', potree: '1,233 ms', core: '622 ms', win: 0 },
+  { metric: 'First contentful paint', vk: '324 ms', potree: '732 ms', core: '364 ms', win: 0 },
+  { metric: 'First selection', vk: '275 ms', potree: '812 ms', core: '374 ms', win: 0 },
+  { metric: 'Speed Index', vk: '1,918', potree: '1,493', core: '8,487', win: 2 },
+  { metric: 'Visually complete', vk: '23.5 s', potree: '21.4 s', core: '25.3 s', win: 2 },
+  { metric: 'JS decoded', vk: '0.39 MB', potree: '2.39 MB', core: '0.74 MB', win: 0 },
 ]
 
 export default function ComparePotree() {
@@ -130,15 +138,13 @@ export default function ComparePotree() {
             <div className="perf-head">
               <span>METRIC</span>
               <span>voxelkloud</span>
-              <span className="perf-spike-col">loader harness</span>
-              <span>Potree 1.8</span>
+                <span>Potree 1.8</span>
               <span>potree-core</span>
             </div>
             {perf.map((row) => (
               <div className="perf-row" key={row.metric}>
                 <span className="dim">{row.metric}</span>
                 <span className={row.win === 0 ? 'perf-win' : undefined}>{row.vk}</span>
-                <span className="perf-spike-col">{row.spike}</span>
                 <span className={row.win === 2 ? 'perf-win' : undefined}>{row.potree}</span>
                 <span className={row.win === 3 ? 'perf-win' : undefined}>{row.core}</span>
               </div>
@@ -146,11 +152,15 @@ export default function ComparePotree() {
           </div>
 
           <p className="perf-note">
-            <strong>Conditions.</strong> Median of 4 cold runs, 25 August 2026. Chrome running
+            <strong>Conditions.</strong> Median of 2 cold runs, 26 August 2026. Chrome running
             headed on a real GPU — headless has no WebGPU adapter and would score a software
             rasteriser against WebGL. One origin serving every arm and the dataset, throttled to
             20 Mbit with 40 ms RTT. Autzen, camera at 0.25 of the longest extent, 3M point budget.
-            The raw JSON for all 24 runs is versioned in the monorepo.
+            The raw JSON is versioned in the monorepo. An earlier sitting was discarded: idle
+            fps came back as exactly 50.0 for two different engines and exactly 25.0 for the
+            third, and figures that round are missed vsync rather than a result — a background
+            updater was taking 27% of a core. With it closed the same arms read 60.2, 59.5 and
+            29.9.
           </p>
           <p className="perf-note">
             <strong>Why these deltas can be trusted.</strong> potree-core is unchanged code between
@@ -163,17 +173,9 @@ export default function ComparePotree() {
           <p className="perf-note">
             <strong>Speed Index measures each arm against its own final frame.</strong> A renderer
             whose finished image is sharper has further to travel and scores worse for it, and
-            ours is sharper than Potree&rsquo;s — verified by screenshot. Some of that 1,926
-            against 1,497 is the metric, not latency. How much, nobody has isolated, so the row
+            ours is sharper than Potree&rsquo;s — verified by screenshot. Some of that 1,918
+            against 1,493 is the metric, not latency. How much, nobody has isolated, so the row
             stands as a loss.
-          </p>
-          <p className="perf-note">
-            <strong>The fourth column is a loader experiment, not a renderer.</strong> It is a
-            standalone harness that bypasses the view entirely and fetches 8 nodes at a time
-            against the shipped view&rsquo;s 1. Both it and the voxelkloud column draw through the
-            same compute rasteriser, so the 9.4 s convergence and the 11 MB heap belong to that
-            loading loop — not to how points reach the screen. It is here because the gap is worth
-            keeping visible, and it wins no row.
           </p>
         </div>
 

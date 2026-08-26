@@ -99,7 +99,7 @@ function Chart({ data, idx }: { data: Data; idx: number }) {
     const fg = css.getPropertyValue('--foreground').trim() || '#e9eee9'
     g.strokeStyle = border
     g.fillStyle = muted
-    g.font = '10px var(--font-mono, monospace)'
+    g.font = '12px var(--font-mono, monospace)'
     g.lineWidth = 1
     for (const d of [100, 30, 10, 3, 1]) {
       const y = Y(d)
@@ -223,8 +223,13 @@ export function BenchSlider() {
 
       <Chart data={data} idx={idx} />
       <p className={styles.legend}>
-        Distance to each arm’s <em>own</em> final frame, log scale. Comparing one rasteriser’s
-        pixels to another’s would measure visual character, not convergence.
+        <em>compute</em> is the WebGPU default and <em>points</em> the WebGL 2 fallback — a
+        second full rasteriser, not a degraded mode: it reaches half way before potree-core
+        does and settles three and a half seconds sooner.
+      </p>
+      <p className={styles.legend}>
+        The chart is distance to each arm’s <em>own</em> final frame, log scale. Comparing one
+        rasteriser’s pixels to another’s would measure visual character, not convergence.
       </p>
     </div>
   )
