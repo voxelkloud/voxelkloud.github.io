@@ -178,7 +178,7 @@ export default function Page() {
         <h1>
           Point cloud rendering,
           <br />
-          <em>with the pieces exposed.</em>
+          <em>in your own three.js scene.</em>
         </h1>
         <p className="hero-copy">
           A point-cloud stack split into a neutral core, a loader, a renderer, and thin
