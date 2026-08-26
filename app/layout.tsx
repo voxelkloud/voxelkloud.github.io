@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next'
+import Script from 'next/script'
 import { IBM_Plex_Mono, IBM_Plex_Sans } from 'next/font/google'
 import './globals.css'
 
@@ -20,6 +21,15 @@ const plexMono = IBM_Plex_Mono({
 // The deploy workflow passes the real origin; the default is the GitHub Pages
 // project URL, which is where this ships from.
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://voxelkloud.github.io/'
+
+/**
+ * GoatCounter site code, or empty to send nothing.
+ *
+ * Page views and nothing else: no cookies, no fingerprint, no cross-site
+ * identifier — which is why this site carries no consent banner, and should
+ * stay that way. Empty means a local build phones nobody.
+ */
+const GOATCOUNTER: string = 'voxelkloud'
 
 // Plain on purpose. The title is what a search result shows and what a tab
 // says, and it earns nothing by being clever: it carries the terms someone
@@ -59,7 +69,17 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${plexSans.variable} ${plexMono.variable} bg-background`}>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        {children}
+        {GOATCOUNTER === '' ? null : (
+          <Script
+            async
+            data-goatcounter={`https://${GOATCOUNTER}.goatcounter.com/count`}
+            src="https://gc.zgo.at/count.js"
+            strategy="afterInteractive"
+          />
+        )}
+      </body>
     </html>
   )
 }
