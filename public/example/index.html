@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>A public point cloud, streamed — voxelkloud</title>
+    <meta name="description" content="One COPC file on a public bucket, read by HTTP Range with no conversion step." />
+    <style>
+      :root { --bg:#0b0e0d; --fg:#e9eee9; --muted:#8c9890; --border:#26302a; --panel:#101512; --accent:#c4f04d; }
+      * { box-sizing: border-box; }
+      html, body { margin:0; height:100%; background:var(--bg); color:var(--fg); overflow:hidden;
+        font:14px/1.6 "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif; }
+      #c { display:block; width:100vw; height:100vh; }
+      .panel { position:fixed; z-index:2; background:rgba(16,21,18,.9); border:1px solid var(--border);
+        padding:12px 15px; backdrop-filter:blur(6px); }
+      #note { top:14px; left:14px; max-width:44ch; font-size:13px; color:var(--muted); }
+      #note b, #note code { color:var(--fg); }
+      #note code { font:12px "IBM Plex Mono", ui-monospace, monospace; }
+      #hud { bottom:14px; left:14px; font:12px "IBM Plex Mono", ui-monospace, monospace;
+        color:var(--accent); font-variant-numeric:tabular-nums; }
+      #back { top:14px; right:14px; color:var(--accent); text-decoration:none;
+        font:12px "IBM Plex Mono", ui-monospace, monospace; }
+      a:focus-visible, :focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+    </style>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap" />
+    <script type="module" crossorigin src="/example/assets/example-Bn2a4obB.js"></script>
+  </head>
+  <body>
+    <canvas id="c"></canvas>
+    <div class="panel" id="note">loading&hellip;</div>
+    <div class="panel" id="hud">&nbsp;</div>
+    <a class="panel" id="back" href="../">&larr; voxelkloud</a>
+  </body>
+</html>

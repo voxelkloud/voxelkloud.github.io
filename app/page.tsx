@@ -191,6 +191,9 @@ export default function Page() {
           <a className="button button-primary" href={ORG} rel="noreferrer" target="_blank">
             View on GitHub <ArrowUpRight aria-hidden="true" size={16} />
           </a>
+          <a className="button button-quiet" href="./example/">
+            Open a live cloud <ChevronRight aria-hidden="true" size={16} />
+          </a>
           <a className="button button-quiet" href="#install">
             Read docs <ChevronRight aria-hidden="true" size={16} />
           </a>
